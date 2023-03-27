@@ -1,7 +1,9 @@
 # SEP_Practica1
+
 Practica1 de SEP, caleffación de una zona con control de colector
 
-# Enunciado
+## Enunciado
+
 - Monitorizar la temperatura a la que se encuentra la habitación, sala o zona y activar o desactivar las electroválvulas que controlan el flujo de agua hacía la zona.
 - Controlar la temperatura del agua en la caldera, acumulador y colector.
 - Si al menos una zona se activa, la bomba y la válvula principal deben activarse. Además, si la temperatura del acumulador es inferior a 45ºC se debe activar la caldera de apoyo.
