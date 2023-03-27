@@ -29,7 +29,7 @@ estado sistema = apagado;
 // variales temperatura
 float temperaturaDeseada = 20.0;
 bool encenderCalefaccion = false;
-uint8_t PIN_ZONA = A5;
+uint8_t PIN_ZONA = A3;
 float histeresis = 1.0;
 
 // variables electrovalvula
@@ -38,6 +38,9 @@ bool electroValvulaPrincipal = false;
 unsigned long tPrev_valvulaZona = 0;
 unsigned long tPrev_valvulaPrincipal = 0;
 unsigned long PeriodoConmutacion = 1000;
+
+//Activacion de caldera
+uint8_t PIN_ACUMULADOR = A1;
 
 void setup()
 {
@@ -117,6 +120,7 @@ void loop()
             {
                 activacionElectrovalvula(electroValvulaZona, t_actual, tPrev_valvulaZona, PeriodoConmutacion, electroValvulaZona);
             }
+            float temperaturaAcumulador =mapFloat(analogRead(PIN_ACUMULADOR), 0.0, 1023.0, -5.0, 80.0);
         }
 
         break;
