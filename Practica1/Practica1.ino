@@ -94,6 +94,7 @@ void loop()
             }
         }
         break;
+
     case estado::encendido:
         letra = lecturaMatricial();
         t_actual = millis();
