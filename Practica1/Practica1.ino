@@ -42,6 +42,8 @@ unsigned long PeriodoConmutacion = 1000;
 //Activacion de caldera
 uint8_t PIN_ACUMULADOR = A1;
 
+//UPS
+uint8_t PIN_UPS = A5;
 void setup()
 {
     Serial.begin(9600);
@@ -106,6 +108,10 @@ void loop()
             prevMillisApagado = t_actual;
             letraAneterior = letra;
         }
+        //CONTROL UPS
+        float lectura_UPS = mapFloat(analogRead(PIN_UPS),0.0, 1023.0, 0.0, 5.0);
+        lectura_UPS = mapFloat(lectura_UPS, 0.0, 5.0, 0.0, 12.0);
+        estadosAlimentacion UPS = estadoUPS(lectura_UPS,12.0,12.0);
 
         // Control temperatura
         float temperatura = mapFloat(analogRead(PIN_ZONA), 0.0, 1023.0, -5.0, 80.0); // t en C

@@ -1,4 +1,4 @@
-enum estadosAlimentacion{ALIMENTACION_OK, ALIMENTACION_SOBRE, ALIMENTACION_DESC};
+
 
 estadosAlimentacion estadoUPS(float voltaje, float limSup, float limInf){
     static estadosAlimentacion resultado = estadosAlimentacion::ALIMENTACION_OK;
