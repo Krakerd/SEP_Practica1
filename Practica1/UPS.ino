@@ -1,4 +1,4 @@
-
+#include "Prototipos.h"
 
 estadosAlimentacion estadoUPS(float voltaje, float limSup, float limInf){
     static estadosAlimentacion resultado = estadosAlimentacion::ALIMENTACION_OK;

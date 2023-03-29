@@ -33,8 +33,10 @@ uint8_t PIN_ZONA = A3;
 float histeresis = 1.0;
 
 // variables electrovalvula
-bool electroValvulaZona = false;
-bool electroValvulaPrincipal = false;
+estadosValvula valvulaZona = estadosValvula::Cerrado;
+estadosValvula valvulaPrincipal = estadosValvula::Cerrado;
+estadosValvula valvulaZonaAnterior = estadosValvula::Cerrado;
+estadosValvula valvulaPrincipalAnterior = estadosValvula::Cerrado;
 unsigned long tPrev_valvulaZona = 0;
 unsigned long tPrev_valvulaPrincipal = 0;
 unsigned long PeriodoConmutacion = 1000;
@@ -42,8 +44,6 @@ unsigned long PeriodoConmutacion = 1000;
 //Activacion de caldera
 uint8_t PIN_ACUMULADOR = A1;
 
-//UPS
-uint8_t PIN_UPS = A5;
 void setup()
 {
     Serial.begin(9600);
@@ -69,10 +69,7 @@ void loop()
     case estado::apagado:
         letra = lecturaMatricial();
         t_actual = millis();
-        if(electroValvulaPrincipal == true)
-            activacionElectrovalvula(pinPrincipalValvula, t_actual, tPrev_valvulaPrincipal, PeriodoConmutacion, electroValvulaPrincipal);
-        if(electroValvulaZona == true)
-            activacionElectrovalvula(pinZonaValvula, t_actual, tPrev_valvulaZona, PeriodoConmutacion, electroValvulaZona);
+        
         if (letra != letraAneterior)
         {
             letraAneterior = letra;
@@ -96,7 +93,6 @@ void loop()
             }
         }
         break;
-
     case estado::encendido:
         letra = lecturaMatricial();
         t_actual = millis();
@@ -108,24 +104,18 @@ void loop()
             prevMillisApagado = t_actual;
             letraAneterior = letra;
         }
-        //CONTROL UPS
-        float lectura_UPS = mapFloat(analogRead(PIN_UPS),0.0, 1023.0, 0.0, 5.0);
-        lectura_UPS = mapFloat(lectura_UPS, 0.0, 5.0, 0.0, 12.0);
-        estadosAlimentacion UPS = estadoUPS(lectura_UPS,12.0,12.0);
 
         // Control temperatura
         float temperatura = mapFloat(analogRead(PIN_ZONA), 0.0, 1023.0, -5.0, 80.0); // t en C
+        Serial.println(temperatura);
         encenderCalefaccion = controlHisteresis(temperaturaDeseada, histeresis, temperatura, encenderCalefaccion);
         if (encenderCalefaccion)
         {
+            Serial.println("ENCENDER CALEFACCION");
             // codigo de encendido del sistema.
-            if (electroValvulaPrincipal == false)
-            {
-                activacionElectrovalvula(electroValvulaPrincipal, t_actual, tPrev_valvulaPrincipal, PeriodoConmutacion, electroValvulaPrincipal);
-            }
-            if (electroValvulaZona == false)
-            {
-                activacionElectrovalvula(electroValvulaZona, t_actual, tPrev_valvulaZona, PeriodoConmutacion, electroValvulaZona);
+            if(valvulaZona != estadosValvula::Abierto){
+                activacionElectrovalvula(pinZonaValvula,t_actual,tPrev_valvulaZona, PeriodoConmutacion, valvulaZona, valvulaZonaAnterior);
+                Serial.println("ACTIVANDO VALVULA ZONA");
             }
             float temperaturaAcumulador =mapFloat(analogRead(PIN_ACUMULADOR), 0.0, 1023.0, -5.0, 80.0);
         }
