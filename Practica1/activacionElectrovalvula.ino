@@ -1,4 +1,3 @@
-#include "Prototipos.h"
 
 void activacionElectrovalvula(int pin, unsigned long tactual, unsigned long &prev, unsigned long T, estadosValvula &valvula, estadosValvula &estadoPrev){
 
