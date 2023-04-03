@@ -47,7 +47,7 @@ bool caldera = false;
 uint8_t pinCaldera = 13;
 void setup()
 {
-    Serial.begin(9600);
+    Serial.begin(115200);
     for (int nL = 0; nL <= 3; nL++)
     {
         pinMode(pinesFilas[nL], OUTPUT);
@@ -73,12 +73,10 @@ void loop()
         if (valvulaZona != estadosValvula::Cerrado)
         {
             activacionElectrovalvula(pinZonaValvula, t_actual, tPrev_valvulaZona, PeriodoConmutacion, valvulaZona, valvulaZonaAnterior);
-            Serial.println("CERRANDO VALVULA ZONA");
         }
         if (valvulaPrincipal != estadosValvula::Cerrado)
         {
             activacionElectrovalvula(pinPrincipalValvula, t_actual, tPrev_valvulaPrincipal, PeriodoConmutacion, valvulaPrincipal, valvulaPrincipalAnterior);
-            Serial.println("CERRANDO VALVULA PRINCIPAL");
         }
         //Apagado de caldera al apagar el sistema
         if(caldera){
@@ -121,6 +119,7 @@ void loop()
 
         // Control temperatura
         float temperatura = mapFloat(analogRead(PIN_ZONA), 0.0, 1023.0, -5.0, 80.0); // t en C
+        Serial.print(">Temperatura zona:");
         Serial.println(temperatura);
         encenderCalefaccion = controlHisteresis(temperaturaDeseada, histeresis, temperatura, encenderCalefaccion);
         if (encenderCalefaccion)
@@ -130,14 +129,14 @@ void loop()
             if (valvulaZona != estadosValvula::Abierto)
             {
                 activacionElectrovalvula(pinZonaValvula, t_actual, tPrev_valvulaZona, PeriodoConmutacion, valvulaZona, valvulaZonaAnterior);
-                Serial.println("ACTIVANDO VALVULA ZONA");
             }
             if (valvulaPrincipal != estadosValvula::Abierto)
             {
                 activacionElectrovalvula(pinPrincipalValvula, t_actual, tPrev_valvulaPrincipal, PeriodoConmutacion, valvulaPrincipal, valvulaPrincipalAnterior);
-                Serial.println("ACTIVANDO VALVULA PRINCIPAL");
             }
             float temperaturaAcumulador = mapFloat(analogRead(PIN_ACUMULADOR), 0.0, 1023.0, -5.0, 80.0);
+            Serial.print(">Temperatura Acumulador:");
+            Serial.println(temperaturaAcumulador);
             // Se considera que el disparo de la caldera no tiene una histeresis por lo que procedemos a realizar la activacion
             if(temperaturaAcumulador < 45.0){
                 caldera = true;
@@ -149,4 +148,17 @@ void loop()
 
         break;
     }
+    Serial.print(">Sistema:");
+    Serial.println(sistema);
+    Serial.print(">Valvula de Zona:");
+    Serial.println(valvulaZona);
+    Serial.print(">Valvula pincipal:");
+    Serial.println(valvulaPrincipal);
+    float limiteSuperior = temperaturaDeseada + histeresis;
+    Serial.print(">LimSup:");
+    Serial.println(limiteSuperior);
+    float limiteInferior = temperaturaDeseada - histeresis;
+    Serial.print(">LimInf:");
+    Serial.println(limiteInferior);
+    
 }
