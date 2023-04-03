@@ -144,6 +144,13 @@ void loop()
                 caldera = false;
             }
                 digitalWrite(pinCaldera, caldera);
+        } else{
+            if (valvulaZona != estadosValvula::Cerrado){
+                activacionElectrovalvula(pinZonaValvula, t_actual, tPrev_valvulaZona, PeriodoConmutacion, valvulaZona, valvulaZonaAnterior);
+            }
+            if (valvulaPrincipal != estadosValvula::Cerrado){
+                activacionElectrovalvula(pinPrincipalValvula, t_actual, tPrev_valvulaPrincipal, PeriodoConmutacion, valvulaPrincipal, valvulaPrincipalAnterior);
+            }
         }
 
         break;
