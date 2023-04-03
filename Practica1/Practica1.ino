@@ -1,6 +1,6 @@
 // prototipos de funciones y defines
 #include "Prototipos.h"
-#define pinZonaValvula 13
+#define pinZonaValvula 11
 #define pinPrincipalValvula 10
 
 // Variables teclado
@@ -80,6 +80,11 @@ void loop()
             activacionElectrovalvula(pinPrincipalValvula, t_actual, tPrev_valvulaPrincipal, PeriodoConmutacion, valvulaPrincipal, valvulaPrincipalAnterior);
             Serial.println("CERRANDO VALVULA PRINCIPAL");
         }
+        //Apagado de caldera al apagar el sistema
+        if(caldera){
+            caldera = false;
+            digitalWrite(pinCaldera, caldera);
+        }
         // Antirrebote con comprobado de Pin
         if (letra != letraAneterior)
         {
@@ -136,10 +141,10 @@ void loop()
             // Se considera que el disparo de la caldera no tiene una histeresis por lo que procedemos a realizar la activacion
             if(temperaturaAcumulador < 45.0){
                 caldera = true;
-                digitalWrite(pinCaldera, caldera);
             } else{
                 caldera = false;
             }
+                digitalWrite(pinCaldera, caldera);
         }
 
         break;
