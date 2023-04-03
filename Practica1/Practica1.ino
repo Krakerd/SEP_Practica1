@@ -73,6 +73,8 @@ void loop()
     unsigned long t_actual = millis();
     float voltajeAlimentacion = mapFloat(analogRead(LECTOR_UPS), 0.0, 1023.0, 0.0, 5.0);
     float voltajeReal = mapFloat(voltajeAlimentacion, 0.0, 4.0, 0.0, 12.0);
+    Serial.print(">Tension UPS:");
+    Serial.println(voltajeReal);
     estadosAlimentacion UPS = estadoUPS(voltajeReal, tension_deseada, tension_deseada);
     if (UPS != estadosAlimentacion::ALIMENTACION_OK)
     {
