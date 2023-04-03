@@ -41,9 +41,10 @@ unsigned long tPrev_valvulaZona = 0;
 unsigned long tPrev_valvulaPrincipal = 0;
 unsigned long PeriodoConmutacion = 1000;
 
-//Activacion de caldera
+// Activacion de caldera
 uint8_t PIN_ACUMULADOR = A1;
-
+bool caldera = false;
+uint8_t pinCaldera = 13;
 void setup()
 {
     Serial.begin(9600);
@@ -58,18 +59,28 @@ void setup()
     }
     pinMode(pinZonaValvula, OUTPUT);
     pinMode(pinPrincipalValvula, OUTPUT);
+    pinMode(pinCaldera, OUTPUT);
 }
 
 void loop()
 {
-    char letra;
-    unsigned long t_actual;
+    char letra = lecturaMatricial();
+    unsigned long t_actual = millis();
     switch (sistema)
     {
     case estado::apagado:
-        letra = lecturaMatricial();
-        t_actual = millis();
-        
+        // Apagado de Válvulas al apagar el sistema
+        if (valvulaZona != estadosValvula::Cerrado)
+        {
+            activacionElectrovalvula(pinZonaValvula, t_actual, tPrev_valvulaZona, PeriodoConmutacion, valvulaZona, valvulaZonaAnterior);
+            Serial.println("CERRANDO VALVULA ZONA");
+        }
+        if (valvulaPrincipal != estadosValvula::Cerrado)
+        {
+            activacionElectrovalvula(pinPrincipalValvula, t_actual, tPrev_valvulaPrincipal, PeriodoConmutacion, valvulaPrincipal, valvulaPrincipalAnterior);
+            Serial.println("CERRANDO VALVULA PRINCIPAL");
+        }
+        // Antirrebote con comprobado de Pin
         if (letra != letraAneterior)
         {
             letraAneterior = letra;
@@ -94,8 +105,6 @@ void loop()
         }
         break;
     case estado::encendido:
-        letra = lecturaMatricial();
-        t_actual = millis();
         bool permutar = BotonApagado(letra, 'A', &letraAneterior, t_actual, prevMillisApagado, 2000);
         if (permutar)
         {
@@ -112,12 +121,25 @@ void loop()
         if (encenderCalefaccion)
         {
             Serial.println("ENCENDER CALEFACCION");
-            // codigo de encendido del sistema.
-            if(valvulaZona != estadosValvula::Abierto){
-                activacionElectrovalvula(pinZonaValvula,t_actual,tPrev_valvulaZona, PeriodoConmutacion, valvulaZona, valvulaZonaAnterior);
+            // Abrir las valvulas.
+            if (valvulaZona != estadosValvula::Abierto)
+            {
+                activacionElectrovalvula(pinZonaValvula, t_actual, tPrev_valvulaZona, PeriodoConmutacion, valvulaZona, valvulaZonaAnterior);
                 Serial.println("ACTIVANDO VALVULA ZONA");
             }
-            float temperaturaAcumulador =mapFloat(analogRead(PIN_ACUMULADOR), 0.0, 1023.0, -5.0, 80.0);
+            if (valvulaPrincipal != estadosValvula::Abierto)
+            {
+                activacionElectrovalvula(pinPrincipalValvula, t_actual, tPrev_valvulaPrincipal, PeriodoConmutacion, valvulaPrincipal, valvulaPrincipalAnterior);
+                Serial.println("ACTIVANDO VALVULA PRINCIPAL");
+            }
+            float temperaturaAcumulador = mapFloat(analogRead(PIN_ACUMULADOR), 0.0, 1023.0, -5.0, 80.0);
+            // Se considera que el disparo de la caldera no tiene una histeresis por lo que procedemos a realizar la activacion
+            if(temperaturaAcumulador < 45.0){
+                caldera = true;
+                digitalWrite(pinCaldera, caldera);
+            } else{
+                caldera = false;
+            }
         }
 
         break;
