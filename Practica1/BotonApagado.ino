@@ -1,4 +1,4 @@
-bool BotonApagado(char letra, char comparar, char *letraPrevia, unsigned long t, unsigned long &tPrevio, unsigned long periodo)
+bool BotonApagado(char letra, char comparar, char &letraPrevia, unsigned long t, unsigned long &tPrevio, unsigned long periodo)
 {
     bool res = false;
     if (letra != comparar)
@@ -9,7 +9,7 @@ bool BotonApagado(char letra, char comparar, char *letraPrevia, unsigned long t,
     {
         res = true;
         tPrevio = t;
-        *letraPrevia = letra;
+        letraPrevia = letra;
     }
     return res;
 }

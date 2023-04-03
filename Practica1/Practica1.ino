@@ -105,7 +105,7 @@ void loop()
         }
         break;
     case estado::encendido:
-        bool permutar = BotonApagado(letra, 'A', &letraAneterior, t_actual, prevMillisApagado, 2000);
+        bool permutar = BotonApagado(letra, 'A', letraAneterior, t_actual, prevMillisApagado, 2000);
         if (permutar)
         {
             permutar = false;
