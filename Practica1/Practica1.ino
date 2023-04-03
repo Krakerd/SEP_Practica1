@@ -75,10 +75,12 @@ void loop()
     float voltajeReal = mapFloat(voltajeAlimentacion, 0.0, 4.0, 0.0, 12.0);
     Serial.print(">Tension UPS:");
     Serial.println(voltajeReal);
-    estadosAlimentacion UPS = estadoUPS(voltajeReal, tension_deseada, tension_deseada);
+    estadosAlimentacion UPS = estadoUPS(voltajeReal, tension_deseada+0.1, tension_deseada);
     if (UPS != estadosAlimentacion::ALIMENTACION_OK)
     {
         blinkSinDelays(pinERROR, t_actual, 1000, 4000, tPrev_ErrorUps, LEDErrorUps);
+    } else{
+        digitalWrite(pinERROR, LOW);
     }
     switch (sistema)
     {
