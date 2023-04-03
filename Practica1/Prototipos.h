@@ -7,6 +7,8 @@ void activacionElectrovalvula(int pin, unsigned long tactual, unsigned long &pre
 
 enum estadosAlimentacion{ALIMENTACION_OK, ALIMENTACION_SOBRE, ALIMENTACION_DESC};
 estadosAlimentacion estadoUPS(float voltaje, float limSup, float limInf);
+void blinkSinDelays(uint8_t pinLed, unsigned long tiempo, unsigned long T_ON, unsigned long T_OFF, unsigned long &tiempoPrev, bool &estadoLED);
+
 
 enum estadosValvula{Cerrado = 0, Abierto = 1, Cambiando = 2};
 void activacionElectrovalvula(int pin, unsigned long tactual, unsigned long &prev, unsigned long T, estadosValvula &valvula, estadosValvula &estadoPrev);
