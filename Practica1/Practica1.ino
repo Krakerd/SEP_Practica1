@@ -109,13 +109,11 @@ void loop()
         if (valvulaColector != estadosValvula::Abierto)
             activacionElectrovalvula(pinColector, t_actual, tPrev_valvulaColector, PeriodoConmutacion, valvulaColector, valvulaColectorAnterior);
         if (valvulaColector == estadosValvula::Abierto)
-        {
-            estadoColector = 3;
-            tPrev_AperturaColector = t_actual;
-        }
+            estadoColector = 2;
+        tPrev_AperturaColector = t_actual;
         break;
 
-    case 3:
+    case 2:
         if (t_actual - tPrev_AperturaColector >= PeriodoVaciadoColector)
         {
             if (valvulaColector != estadosValvula::Cerrado)
@@ -123,9 +121,6 @@ void loop()
         }
         if (valvulaColector == estadosValvula::Cerrado || temperaturaColector >= 70.0)
             estadoColector = 0;
-        break;
-    default:
-        estadoColector = 0;
         break;
     }
 
