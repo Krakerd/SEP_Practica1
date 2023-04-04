@@ -12,3 +12,7 @@ void blinkSinDelays(uint8_t pinLed, unsigned long tiempo, unsigned long T_ON, un
 
 enum estadosValvula{Cerrado = 0, Abierto = 1, Cambiando = 2};
 void activacionElectrovalvula(int pin, unsigned long tactual, unsigned long &prev, unsigned long T, estadosValvula &valvula, estadosValvula &estadoPrev);
+
+enum estado{apagado, encendido};
+
+void Imprimir( char nombre[] , float valor);

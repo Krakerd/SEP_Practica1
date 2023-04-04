@@ -18,11 +18,6 @@ int indicepin = 0;
 
 // Variables Apagado
 unsigned long prevMillisApagado = 0;
-enum estado
-{
-    apagado,
-    encendido
-};
 estado sistema = apagado;
 
 // variales temperatura
@@ -42,7 +37,7 @@ const unsigned long PeriodoConmutacion = 1000;
 
 // Activacion de caldera
 uint8_t PIN_ACUMULADOR = A1;
-bool caldera = false;
+
 
 // Variables UPS
 uint8_t LECTOR_UPS = A0;
@@ -67,7 +62,7 @@ int estadoColector = 0;
 void setup()
 {
     Serial.begin(115200);
-    for (int nL = 0; nL <= 3; nL++)
+    for (int nL = 0; nL <= 3; nL++) // inicializar los pines del teclado
     {
         pinMode(pinesFilas[nL], OUTPUT);
         digitalWrite(pinesFilas[nL], HIGH);
@@ -87,31 +82,23 @@ void loop()
 {
     char letra = lecturaMatricial();
     unsigned long t_actual = millis();
+
     float voltajeAlimentacion = mapFloat(analogRead(LECTOR_UPS), 0.0, 1023.0, 0.0, 5.0);
     float voltajeReal = mapFloat(voltajeAlimentacion, 0.0, 4.0, 0.0, 12.0);
-    Serial.print(">Tension UPS:");
-    Serial.println(voltajeReal);
+    Imprimir("Tension UPS", voltajeReal);
     estadosAlimentacion UPS = estadoUPS(voltajeReal, tension_deseada + 0.1, tension_deseada);
     if (UPS != estadosAlimentacion::ALIMENTACION_OK)
-    {
         blinkSinDelays(pinERROR, t_actual, 1000, 4000, tPrev_ErrorUps, LEDErrorUps);
-    }
     else
-    {
         digitalWrite(pinERROR, LOW);
-    }
+    
     float temperaturaAcumulador = mapFloat(analogRead(PIN_ACUMULADOR), 0.0, 1023.0, -5.0, 80.0);
-    Serial.print(">Temperatura Acumulador:");
-    Serial.println(temperaturaAcumulador);
+    Imprimir("Temperatura Acumulador", temperaturaAcumulador);
     if (UPS == estadosAlimentacion::ALIMENTACION_OK && temperaturaAcumulador >= temperaturaError) // prioridad al error de alimentacion
-    {
         blinkSinDelays(pinERROR, t_actual, 1000, 1000, tPrev_ErrorTemp, LEDErrorTemp);
-    }
+    
     float temperaturaColector = mapFloat(analogRead(LECTOR_COLECTOR), 0.0, 1023.0, -5.0, 80.0);
-    Serial.print(">Temperatura Colector:");
-    Serial.println(temperaturaColector);
-    Serial.print(">debug:");
-    Serial.println(t_actual - tPrev_AperturaColector);
+    Imprimir("Temperatura Colector", temperaturaColector);
     switch (estadoColector)
     {
     case 0:
@@ -120,9 +107,7 @@ void loop()
         break;
     case 1:
         if (valvulaColector != estadosValvula::Abierto)
-        {
             activacionElectrovalvula(pinColector, t_actual, tPrev_valvulaColector, PeriodoConmutacion, valvulaColector, valvulaColectorAnterior);
-        }
         if (valvulaColector == estadosValvula::Abierto)
         {
             estadoColector = 3;
@@ -134,9 +119,7 @@ void loop()
         if (t_actual - tPrev_AperturaColector >= PeriodoVaciadoColector)
         {
             if (valvulaColector != estadosValvula::Cerrado)
-            {
                 activacionElectrovalvula(pinColector, t_actual, tPrev_valvulaColector, PeriodoConmutacion, valvulaColector, valvulaColectorAnterior);
-            }
         }
         if (valvulaColector == estadosValvula::Cerrado || temperaturaColector >= 70.0)
             estadoColector = 0;
@@ -145,21 +128,19 @@ void loop()
         estadoColector = 0;
         break;
     }
+
     float temperatura = mapFloat(analogRead(PIN_ZONA), 0.0, 1023.0, -5.0, 80.0); // t en C
-    Serial.print(">Temperatura zona:");
-    Serial.println(temperatura);
+    Imprimir("Temperatura de Zona", temperatura);
+
+    bool caldera = false;
     switch (sistema)
     {
     case estado::apagado:
         // Apagado de Válvulas al apagar el sistema
         if (valvulaZona != estadosValvula::Cerrado)
-        {
             activacionElectrovalvula(pinZonaValvula, t_actual, tPrev_valvulaZona, PeriodoConmutacion, valvulaZona, valvulaZonaAnterior);
-        }
         if (valvulaPrincipal != estadosValvula::Cerrado)
-        {
             activacionElectrovalvula(pinPrincipalValvula, t_actual, tPrev_valvulaPrincipal, PeriodoConmutacion, valvulaPrincipal, valvulaPrincipalAnterior);
-        }
         // Apagado de caldera al apagar el sistema
         if (caldera)
         {
@@ -178,28 +159,21 @@ void loop()
                 {
                     pinIntroducido[indicepin] = '\0';
                     if (strcmp(pin, pinIntroducido) == 0)
-                    {
                         sistema = estado::encendido;
-                    }
-                    else
-                    {
-                        sistema = estado::apagado;
-                    }
                     indicepin = 0;
                 }
             }
         }
+        //Serial.println(pinIntroducido);
         break;
     case estado::encendido:
         bool permutar = BotonApagado(letra, 'A', letraAneterior, t_actual, prevMillisApagado, 2000);
         if (permutar)
         {
-            permutar = false;
             sistema = estado::apagado;
-            prevMillisApagado = t_actual;
             letraAneterior = letra;
         }
-        // Siempre que este encendido se controla temperatura
+        // Siempre que este encendido y sin error se abre el sistema de calefaccion
         if (UPS == estadosAlimentacion::ALIMENTACION_OK && temperaturaAcumulador < temperaturaError)
         {
             // Control calefaccion
@@ -208,34 +182,22 @@ void loop()
             {
                 // Abrir las valvulas.
                 if (valvulaZona != estadosValvula::Abierto)
-                {
                     activacionElectrovalvula(pinZonaValvula, t_actual, tPrev_valvulaZona, PeriodoConmutacion, valvulaZona, valvulaZonaAnterior);
-                }
                 if (valvulaPrincipal != estadosValvula::Abierto)
-                {
                     activacionElectrovalvula(pinPrincipalValvula, t_actual, tPrev_valvulaPrincipal, PeriodoConmutacion, valvulaPrincipal, valvulaPrincipalAnterior);
-                }
                 // Se considera que el disparo de la caldera no tiene una histeresis por lo que procedemos a realizar la activacion
                 if (temperaturaAcumulador < 45.0)
-                {
                     caldera = true;
-                }
                 else
-                {
                     caldera = false;
-                }
                 digitalWrite(pinCaldera, caldera);
             }
             else
             {
                 if (valvulaZona != estadosValvula::Cerrado)
-                {
                     activacionElectrovalvula(pinZonaValvula, t_actual, tPrev_valvulaZona, PeriodoConmutacion, valvulaZona, valvulaZonaAnterior);
-                }
                 if (valvulaPrincipal != estadosValvula::Cerrado)
-                {
                     activacionElectrovalvula(pinPrincipalValvula, t_actual, tPrev_valvulaPrincipal, PeriodoConmutacion, valvulaPrincipal, valvulaPrincipalAnterior);
-                }
                 if (caldera)
                 {
                     caldera = false;
@@ -247,13 +209,9 @@ void loop()
         {
             encenderCalefaccion = false; // Para que se respete la zona muerta cuando se recupera de un error
             if (valvulaZona != estadosValvula::Cerrado)
-            {
                 activacionElectrovalvula(pinZonaValvula, t_actual, tPrev_valvulaZona, PeriodoConmutacion, valvulaZona, valvulaZonaAnterior);
-            }
             if (valvulaPrincipal != estadosValvula::Cerrado)
-            {
                 activacionElectrovalvula(pinPrincipalValvula, t_actual, tPrev_valvulaPrincipal, PeriodoConmutacion, valvulaPrincipal, valvulaPrincipalAnterior);
-            }
             if (caldera)
             {
                 caldera = false;
@@ -263,20 +221,13 @@ void loop()
 
         break;
     }
-    Serial.print(">Sistema:");
-    Serial.println(sistema);
-    Serial.print(">Caldera:");
-    Serial.println(caldera);
-    Serial.print(">Valvula de Zona:");
-    Serial.println(valvulaZona);
-    Serial.print(">Valvula pincipal:");
-    Serial.println(valvulaPrincipal);
-    Serial.print(">Valvula Colector:");
-    Serial.println(valvulaColector);
+    Imprimir("Sistema", sistema);
+    Imprimir("Caldera", caldera);
+    Imprimir("Valvula de Zona",valvulaZona);
+    Imprimir("Valvula Principal", valvulaPrincipal);
+    Imprimir("Valvula de Colector", valvulaColector);
     float limiteSuperior = temperaturaDeseada + histeresis;
-    Serial.print(">LimSup:");
-    Serial.println(limiteSuperior);
+    Imprimir("Limite Superior", limiteSuperior);
     float limiteInferior = temperaturaDeseada - histeresis;
-    Serial.print(">LimInf:");
-    Serial.println(limiteInferior);
+    Imprimir("Limite Inferior", limiteInferior);
 }
