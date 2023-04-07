@@ -16,3 +16,4 @@ void activacionElectrovalvula(int pin, unsigned long tactual, unsigned long &pre
 enum estado{apagado, encendido};
 
 void Imprimir( char nombre[] , float valor);
+void ImprimirArduino( char nombre[] , float valor);

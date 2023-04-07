@@ -5,6 +5,10 @@
 #define pinERROR 12
 #define pinColector 18
 #define pinCaldera 13
+#define PIN_ZONA A3
+#define LECTOR_COLECTOR A2
+#define PIN_ACUMULADOR A1
+#define LECTOR_UPS A0
 
 // Variables teclado
 byte pinesFilas[] = {9, 8, 7, 6};
@@ -12,7 +16,7 @@ byte pinesColumnas[] = {5, 4, 3, 2};
 
 // Variables Clave de acceso
 char letraAneterior = 0;
-char pin[] = "1234";
+const char pin[] = "1234";
 char pinIntroducido[5];
 int indicepin = 0;
 
@@ -23,8 +27,7 @@ estado sistema = apagado;
 // variales temperatura
 float temperaturaDeseada = 20.0;
 bool encenderCalefaccion = false;
-uint8_t PIN_ZONA = A3;
-float histeresis = 1.0;
+const float histeresis = 1.0;
 
 // variables electrovalvula
 estadosValvula valvulaZona = estadosValvula::Cerrado;
@@ -36,18 +39,16 @@ unsigned long tPrev_valvulaPrincipal = 0;
 const unsigned long PeriodoConmutacion = 1000;
 
 // Activacion de caldera
-uint8_t PIN_ACUMULADOR = A1;
-
+bool caldera = false;
 
 // Variables UPS
-uint8_t LECTOR_UPS = A0;
-float tension_deseada = 12.0;
+const float tension_deseada = 12.0;
 unsigned long tPrev_ErrorUps = 0.0;
 bool LEDErrorUps = false;
 
 // Variables error SobreTemperatura
 bool LEDErrorTemp = false;
-float temperaturaError = 75.0;
+const float temperaturaError = 75.0;
 unsigned long tPrev_ErrorTemp = 0.0;
 
 // Variable Colector
@@ -55,8 +56,7 @@ estadosValvula valvulaColector = estadosValvula::Cerrado;
 estadosValvula valvulaColectorAnterior = estadosValvula::Cerrado;
 unsigned long tPrev_valvulaColector = 0;
 unsigned long tPrev_AperturaColector = 0;
-unsigned long PeriodoVaciadoColector = 2000;
-uint8_t LECTOR_COLECTOR = A2;
+const unsigned long PeriodoVaciadoColector = 2000;
 int estadoColector = 0;
 
 void setup()
@@ -91,12 +91,12 @@ void loop()
         blinkSinDelays(pinERROR, t_actual, 1000, 4000, tPrev_ErrorUps, LEDErrorUps);
     else
         digitalWrite(pinERROR, LOW);
-    
+
     float temperaturaAcumulador = mapFloat(analogRead(PIN_ACUMULADOR), 0.0, 1023.0, -5.0, 80.0);
     Imprimir("Temperatura Acumulador", temperaturaAcumulador);
     if (UPS == estadosAlimentacion::ALIMENTACION_OK && temperaturaAcumulador >= temperaturaError) // prioridad al error de alimentacion
         blinkSinDelays(pinERROR, t_actual, 1000, 1000, tPrev_ErrorTemp, LEDErrorTemp);
-    
+
     float temperaturaColector = mapFloat(analogRead(LECTOR_COLECTOR), 0.0, 1023.0, -5.0, 80.0);
     Imprimir("Temperatura Colector", temperaturaColector);
     switch (estadoColector)
@@ -127,7 +127,6 @@ void loop()
     float temperatura = mapFloat(analogRead(PIN_ZONA), 0.0, 1023.0, -5.0, 80.0); // t en C
     Imprimir("Temperatura de Zona", temperatura);
 
-    bool caldera = false;
     switch (sistema)
     {
     case estado::apagado:
@@ -150,6 +149,7 @@ void loop()
             {
                 pinIntroducido[indicepin] = letra;
                 indicepin++;
+                Serial.println(pinIntroducido);
                 if (indicepin > 3)
                 {
                     pinIntroducido[indicepin] = '\0';
@@ -159,7 +159,6 @@ void loop()
                 }
             }
         }
-        //Serial.println(pinIntroducido);
         break;
     case estado::encendido:
         bool permutar = BotonApagado(letra, 'A', letraAneterior, t_actual, prevMillisApagado, 2000);
@@ -218,11 +217,12 @@ void loop()
     }
     Imprimir("Sistema", sistema);
     Imprimir("Caldera", caldera);
-    Imprimir("Valvula de Zona",valvulaZona);
+    Imprimir("Valvula de Zona", valvulaZona);
     Imprimir("Valvula Principal", valvulaPrincipal);
     Imprimir("Valvula de Colector", valvulaColector);
     float limiteSuperior = temperaturaDeseada + histeresis;
     Imprimir("Limite Superior", limiteSuperior);
     float limiteInferior = temperaturaDeseada - histeresis;
     Imprimir("Limite Inferior", limiteInferior);
+    Serial.println("");
 }

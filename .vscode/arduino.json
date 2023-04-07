@@ -2,5 +2,5 @@
     "board": "arduino:avr:uno",
     "sketch": "Practica1\\Practica1.ino",
     "programmer": "avrisp",
-    "port": "COM6"
+    "port": "COM5"
 }
