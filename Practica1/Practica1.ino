@@ -83,22 +83,24 @@ void loop()
     char letra = lecturaMatricial();
     unsigned long t_actual = millis();
 
+    //Control de errores
     float voltajeAlimentacion = mapFloat(analogRead(LECTOR_UPS), 0.0, 1023.0, 0.0, 5.0);
     float voltajeReal = mapFloat(voltajeAlimentacion, 0.0, 4.0, 0.0, 12.0);
-    Imprimir("Tension UPS", voltajeReal);
+    ImprimirArduino("TensionUPS", voltajeReal);
     estadosAlimentacion UPS = estadoUPS(voltajeReal, tension_deseada + 0.1, tension_deseada);
+    float temperaturaAcumulador = mapFloat(analogRead(PIN_ACUMULADOR), 0.0, 1023.0, -5.0, 80.0);
+    ImprimirArduino("TemperaturaAcumulador", temperaturaAcumulador);
+    
     if (UPS != estadosAlimentacion::ALIMENTACION_OK)
         blinkSinDelays(pinERROR, t_actual, 1000, 4000, tPrev_ErrorUps, LEDErrorUps);
+    else if(temperaturaAcumulador >= temperaturaError) // prioridad al error de alimentacion
+        blinkSinDelays(pinERROR, t_actual, 1000, 1000, tPrev_ErrorTemp, LEDErrorTemp);
     else
         digitalWrite(pinERROR, LOW);
 
-    float temperaturaAcumulador = mapFloat(analogRead(PIN_ACUMULADOR), 0.0, 1023.0, -5.0, 80.0);
-    Imprimir("Temperatura Acumulador", temperaturaAcumulador);
-    if (UPS == estadosAlimentacion::ALIMENTACION_OK && temperaturaAcumulador >= temperaturaError) // prioridad al error de alimentacion
-        blinkSinDelays(pinERROR, t_actual, 1000, 1000, tPrev_ErrorTemp, LEDErrorTemp);
-
+    //Control del colector para vaciado del mismo
     float temperaturaColector = mapFloat(analogRead(LECTOR_COLECTOR), 0.0, 1023.0, -5.0, 80.0);
-    Imprimir("Temperatura Colector", temperaturaColector);
+    ImprimirArduino("TemperaturaColector", temperaturaColector);
     switch (estadoColector)
     {
     case 0:
@@ -124,9 +126,11 @@ void loop()
         break;
     }
 
+    //Lectura temperatura
     float temperatura = mapFloat(analogRead(PIN_ZONA), 0.0, 1023.0, -5.0, 80.0); // t en C
-    Imprimir("Temperatura de Zona", temperatura);
+    ImprimirArduino("TemperaturaZona", temperatura);
 
+    // maquina de estados de calefaccion
     switch (sistema)
     {
     case estado::apagado:
@@ -215,14 +219,15 @@ void loop()
 
         break;
     }
-    Imprimir("Sistema", sistema);
-    Imprimir("Caldera", caldera);
-    Imprimir("Valvula de Zona", valvulaZona);
-    Imprimir("Valvula Principal", valvulaPrincipal);
-    Imprimir("Valvula de Colector", valvulaColector);
+    //imresiones
+    ImprimirArduino("Sistema", sistema);
+    ImprimirArduino("Caldera", caldera);
+    ImprimirArduino("ValvulaZona", valvulaZona);
+    ImprimirArduino("ValvulaPrincipal", valvulaPrincipal);
+    ImprimirArduino("ValvulaColector", valvulaColector);
     float limiteSuperior = temperaturaDeseada + histeresis;
-    Imprimir("Limite Superior", limiteSuperior);
+    ImprimirArduino("LimiteSuperior", limiteSuperior);
     float limiteInferior = temperaturaDeseada - histeresis;
-    Imprimir("Limite Inferior", limiteInferior);
+    ImprimirArduino("LimiteInferior", limiteInferior);
     Serial.println("");
 }
