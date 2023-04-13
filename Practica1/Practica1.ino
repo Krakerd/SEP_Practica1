@@ -17,8 +17,16 @@ byte pinesColumnas[] = {5, 4, 3, 2};
 // Variables Clave de acceso
 char letraAneterior = 0;
 const char pin[] = "1234";
+const char pinConfig[] = "666";
 char pinIntroducido[5];
+char pinIntroducidoConfig[6];
 int indicepin = 0;
+int indicepinConf = 0;
+
+float nuevaTempCaldera = 55.0;
+float nuevaTempColector = 60.0;
+unsigned long tPrevModoConfig;
+bool modoConfig = false;
 
 // Variables Apagado
 unsigned long prevMillisApagado = 0;
@@ -40,6 +48,7 @@ const unsigned long PeriodoConmutacion = 1000;
 
 // Activacion de caldera
 bool caldera = false;
+float tempDisparoCaldera = 45.0;
 
 // Variables UPS
 const float tension_deseada = 12.0;
@@ -58,6 +67,7 @@ unsigned long tPrev_valvulaColector = 0;
 unsigned long tPrev_AperturaColector = 0;
 const unsigned long PeriodoVaciadoColector = 2000;
 int estadoColector = 0;
+float tempColectorActv = 70.0;
 
 void setup()
 {
@@ -83,33 +93,33 @@ void loop()
     char letra = lecturaMatricial();
     unsigned long t_actual = millis();
 
-    //Control de errores
+    // Control de errores
     float voltajeAlimentacion = mapFloat(analogRead(LECTOR_UPS), 0.0, 1023.0, 0.0, 5.0);
     float voltajeReal = mapFloat(voltajeAlimentacion, 0.0, 4.0, 0.0, 12.0);
-    ImprimirArduino("TensionUPS", voltajeReal);
+    Imprimir("TensionUPS", voltajeReal);
     estadosAlimentacion UPS = estadoUPS(voltajeReal, tension_deseada + 0.1, tension_deseada);
     float temperaturaAcumulador = mapFloat(analogRead(PIN_ACUMULADOR), 0.0, 1023.0, -5.0, 80.0);
-    ImprimirArduino("TemperaturaAcumulador", temperaturaAcumulador);
-    
+    Imprimir("TemperaturaAcumulador", temperaturaAcumulador);
+
     if (UPS != estadosAlimentacion::ALIMENTACION_OK)
-        blinkSinDelays(pinERROR, t_actual, 1000, 4000, tPrev_ErrorUps, LEDErrorUps);
-    else if(temperaturaAcumulador >= temperaturaError) // prioridad al error de alimentacion
-        blinkSinDelays(pinERROR, t_actual, 1000, 1000, tPrev_ErrorTemp, LEDErrorTemp);
+        blinkSinDelays(pinERROR, t_actual, 1000, 4000, &tPrev_ErrorUps, &LEDErrorUps);
+    else if (temperaturaAcumulador >= temperaturaError) // prioridad al error de alimentacion
+        blinkSinDelays(pinERROR, t_actual, 1000, 1000, &tPrev_ErrorTemp, &LEDErrorTemp);
     else
         digitalWrite(pinERROR, LOW);
 
-    //Control del colector para vaciado del mismo
+    // Control del colector para vaciado del mismo
     float temperaturaColector = mapFloat(analogRead(LECTOR_COLECTOR), 0.0, 1023.0, -5.0, 80.0);
-    ImprimirArduino("TemperaturaColector", temperaturaColector);
+    Imprimir("TemperaturaColector", temperaturaColector);
     switch (estadoColector)
     {
     case 0:
-        if (temperaturaColector >= 70.0)
+        if (temperaturaColector >= tempColectorActv)
             estadoColector = 1;
         break;
     case 1:
         if (valvulaColector != estadosValvula::Abierto)
-            activacionElectrovalvula(pinColector, t_actual, tPrev_valvulaColector, PeriodoConmutacion, valvulaColector, valvulaColectorAnterior);
+            activacionElectrovalvula(pinColector, t_actual, &tPrev_valvulaColector, PeriodoConmutacion, &valvulaColector, &valvulaColectorAnterior);
         if (valvulaColector == estadosValvula::Abierto)
             estadoColector = 2;
         tPrev_AperturaColector = t_actual;
@@ -119,16 +129,16 @@ void loop()
         if (t_actual - tPrev_AperturaColector >= PeriodoVaciadoColector)
         {
             if (valvulaColector != estadosValvula::Cerrado)
-                activacionElectrovalvula(pinColector, t_actual, tPrev_valvulaColector, PeriodoConmutacion, valvulaColector, valvulaColectorAnterior);
+                activacionElectrovalvula(pinColector, t_actual, &tPrev_valvulaColector, PeriodoConmutacion, &valvulaColector, &valvulaColectorAnterior);
         }
-        if (valvulaColector == estadosValvula::Cerrado || temperaturaColector >= 70.0)
+        if (valvulaColector == estadosValvula::Cerrado || temperaturaColector >= tempColectorActv)
             estadoColector = 0;
         break;
     }
 
-    //Lectura temperatura
+    // Lectura temperatura
     float temperatura = mapFloat(analogRead(PIN_ZONA), 0.0, 1023.0, -5.0, 80.0); // t en C
-    ImprimirArduino("TemperaturaZona", temperatura);
+    Imprimir("TemperaturaZona", temperatura);
 
     // maquina de estados de calefaccion
     switch (sistema)
@@ -136,9 +146,9 @@ void loop()
     case estado::apagado:
         // Apagado de Válvulas al apagar el sistema
         if (valvulaZona != estadosValvula::Cerrado)
-            activacionElectrovalvula(pinZonaValvula, t_actual, tPrev_valvulaZona, PeriodoConmutacion, valvulaZona, valvulaZonaAnterior);
+            activacionElectrovalvula(pinZonaValvula, t_actual, &tPrev_valvulaZona, PeriodoConmutacion, &valvulaZona, &valvulaZonaAnterior);
         if (valvulaPrincipal != estadosValvula::Cerrado)
-            activacionElectrovalvula(pinPrincipalValvula, t_actual, tPrev_valvulaPrincipal, PeriodoConmutacion, valvulaPrincipal, valvulaPrincipalAnterior);
+            activacionElectrovalvula(pinPrincipalValvula, t_actual, &tPrev_valvulaPrincipal, PeriodoConmutacion, &valvulaPrincipal, &valvulaPrincipalAnterior);
         // Apagado de caldera al apagar el sistema
         if (caldera)
         {
@@ -154,6 +164,22 @@ void loop()
                 pinIntroducido[indicepin] = letra;
                 indicepin++;
                 Serial.println(pinIntroducido);
+                if (indicepin > 2)
+                {
+                    bool cambioValor = false;
+                    for (int k = 0; k < 3; k++)
+                    {
+                        if (pinIntroducido[k] == pinConfig[k])
+                            cambioValor = true;
+                        else
+                            cambioValor = false;
+                    }
+                    if (cambioValor) // no reinicia indice de pin por si tu pin de acceso coinciden los 3 primeros digitos con el pin de cambio
+                    {
+                        tempDisparoCaldera = nuevaTempCaldera;
+                        tempColectorActv = nuevaTempColector;
+                    }
+                }
                 if (indicepin > 3)
                 {
                     pinIntroducido[indicepin] = '\0';
@@ -165,26 +191,54 @@ void loop()
         }
         break;
     case estado::encendido:
-        bool permutar = BotonApagado(letra, 'A', letraAneterior, t_actual, prevMillisApagado, 2000);
+        bool permutar = BotonApagado(letra, 'A', &letraAneterior, t_actual, &prevMillisApagado, 2000);
         if (permutar)
         {
             sistema = estado::apagado;
             letraAneterior = letra;
+            indicepin = 0;
+        }
+        if (letra != letraAneterior)
+        {
+            letraAneterior = letra;
+            if (letra != 0)
+            {
+                pinIntroducido[indicepin] = letra;
+                indicepin++;
+                Serial.println(pinIntroducido);
+                if (indicepin > 2)
+                {
+                    bool cambioValor = false;
+                    for (int k = 0; k < 3; k++)
+                    {
+                        if (pinIntroducido[k] == pinConfig[k])
+                            cambioValor = true;
+                        else
+                            cambioValor = false;
+                    }
+                    if (cambioValor)
+                    {
+                        tempDisparoCaldera = nuevaTempCaldera;
+                        tempColectorActv = nuevaTempColector;
+                    }
+                    indicepin = 0;
+                }
+            }
         }
         // Siempre que este encendido y sin error se abre el sistema de calefaccion
         if (UPS == estadosAlimentacion::ALIMENTACION_OK && temperaturaAcumulador < temperaturaError)
         {
             // Control calefaccion
-            encenderCalefaccion = controlHisteresis(temperaturaDeseada, histeresis, temperatura, encenderCalefaccion);
+            encenderCalefaccion = controlHisteresis(temperaturaDeseada, histeresis, temperatura, &encenderCalefaccion);
             if (encenderCalefaccion)
             {
                 // Abrir las valvulas.
                 if (valvulaZona != estadosValvula::Abierto)
-                    activacionElectrovalvula(pinZonaValvula, t_actual, tPrev_valvulaZona, PeriodoConmutacion, valvulaZona, valvulaZonaAnterior);
+                    activacionElectrovalvula(pinZonaValvula, t_actual, &tPrev_valvulaZona, PeriodoConmutacion, &valvulaZona, &valvulaZonaAnterior);
                 if (valvulaPrincipal != estadosValvula::Abierto)
-                    activacionElectrovalvula(pinPrincipalValvula, t_actual, tPrev_valvulaPrincipal, PeriodoConmutacion, valvulaPrincipal, valvulaPrincipalAnterior);
+                    activacionElectrovalvula(pinPrincipalValvula, t_actual, &tPrev_valvulaPrincipal, PeriodoConmutacion, &valvulaPrincipal, &valvulaPrincipalAnterior);
                 // Se considera que el disparo de la caldera no tiene una histeresis por lo que procedemos a realizar la activacion
-                if (temperaturaAcumulador < 45.0)
+                if (temperaturaAcumulador < tempDisparoCaldera)
                     caldera = true;
                 else
                     caldera = false;
@@ -193,9 +247,9 @@ void loop()
             else
             {
                 if (valvulaZona != estadosValvula::Cerrado)
-                    activacionElectrovalvula(pinZonaValvula, t_actual, tPrev_valvulaZona, PeriodoConmutacion, valvulaZona, valvulaZonaAnterior);
+                    activacionElectrovalvula(pinZonaValvula, t_actual, &tPrev_valvulaZona, PeriodoConmutacion, &valvulaZona, &valvulaZonaAnterior);
                 if (valvulaPrincipal != estadosValvula::Cerrado)
-                    activacionElectrovalvula(pinPrincipalValvula, t_actual, tPrev_valvulaPrincipal, PeriodoConmutacion, valvulaPrincipal, valvulaPrincipalAnterior);
+                    activacionElectrovalvula(pinPrincipalValvula, t_actual, &tPrev_valvulaPrincipal, PeriodoConmutacion, &valvulaPrincipal, &valvulaPrincipalAnterior);
                 if (caldera)
                 {
                     caldera = false;
@@ -207,9 +261,9 @@ void loop()
         {
             encenderCalefaccion = false; // Para que se respete la zona muerta cuando se recupera de un error
             if (valvulaZona != estadosValvula::Cerrado)
-                activacionElectrovalvula(pinZonaValvula, t_actual, tPrev_valvulaZona, PeriodoConmutacion, valvulaZona, valvulaZonaAnterior);
+                activacionElectrovalvula(pinZonaValvula, t_actual, &tPrev_valvulaZona, PeriodoConmutacion, &valvulaZona, &valvulaZonaAnterior);
             if (valvulaPrincipal != estadosValvula::Cerrado)
-                activacionElectrovalvula(pinPrincipalValvula, t_actual, tPrev_valvulaPrincipal, PeriodoConmutacion, valvulaPrincipal, valvulaPrincipalAnterior);
+                activacionElectrovalvula(pinPrincipalValvula, t_actual, &tPrev_valvulaPrincipal, PeriodoConmutacion, &valvulaPrincipal, &valvulaPrincipalAnterior);
             if (caldera)
             {
                 caldera = false;
@@ -219,15 +273,16 @@ void loop()
 
         break;
     }
-    //imresiones
-    ImprimirArduino("Sistema", sistema);
-    ImprimirArduino("Caldera", caldera);
-    ImprimirArduino("ValvulaZona", valvulaZona);
-    ImprimirArduino("ValvulaPrincipal", valvulaPrincipal);
-    ImprimirArduino("ValvulaColector", valvulaColector);
+    // imresiones
+    Imprimir("Sistema", sistema);
+    Imprimir("Caldera", caldera);
+    Imprimir("ValvulaZona", valvulaZona);
+    Imprimir("ValvulaPrincipal", valvulaPrincipal);
+    Imprimir("ValvulaColector", valvulaColector);
     float limiteSuperior = temperaturaDeseada + histeresis;
-    ImprimirArduino("LimiteSuperior", limiteSuperior);
+    Imprimir("LimiteSuperior", limiteSuperior);
     float limiteInferior = temperaturaDeseada - histeresis;
-    ImprimirArduino("LimiteInferior", limiteInferior);
+    Imprimir("LimiteInferior", limiteInferior);
+    Imprimir("IndiciePin", indicepin);
     Serial.println("");
 }

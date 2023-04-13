@@ -1,24 +1,24 @@
-void blinkSinDelays(uint8_t pinLed, unsigned long tiempo, unsigned long T_ON, unsigned long T_OFF, unsigned long &tiempoPrev, bool &estadoLED)
+void blinkSinDelays(uint8_t pinLed, unsigned long tiempo, unsigned long T_ON, unsigned long T_OFF, unsigned long *tiempoPrev, bool *estadoLED)
 {
 
     // conmutacion de estados
-    if (tiempo - tiempoPrev >= T_ON)
+    if (tiempo - *tiempoPrev >= T_ON)
     {
-        if (estadoLED == HIGH)
+        if (*estadoLED == HIGH)
         {
-            estadoLED = LOW;
-            tiempoPrev = tiempo;
+            *estadoLED = LOW;
+            *tiempoPrev = tiempo;
         }
     }
-    if (tiempo - tiempoPrev >= T_OFF)
+    if (tiempo - *tiempoPrev >= T_OFF)
     {
-        if (estadoLED == LOW)
+        if (*estadoLED == LOW)
         {
-            estadoLED = HIGH;
-            tiempoPrev = tiempo;
+            *estadoLED = HIGH;
+            *tiempoPrev = tiempo;
         }
     }
 
     // escribir estado al led
-    digitalWrite(pinLed, estadoLED);
+    digitalWrite(pinLed, *estadoLED);
 }

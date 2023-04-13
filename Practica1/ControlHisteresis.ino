@@ -5,11 +5,11 @@ encenderCalefaccion = controlHisteresis(tA13, 1.0, 20.0, encenderCalefaccion);*/
 
 /*Se pasa el valor de &resultado porque de esa manera si no ha habido cambios se retorna el mismo valor*/
 
-bool controlHisteresis(float tObj, float hist, float valor, bool &resultado)
+bool controlHisteresis(float tObj, float hist, float valor, bool *resultado)
 {
     if (valor > tObj + hist)
-        resultado = LOW;
+        *resultado = LOW;
     if (valor < tObj - hist)
-        resultado = HIGH;
-    return resultado;
+        *resultado = HIGH;
+    return *resultado;
 }
